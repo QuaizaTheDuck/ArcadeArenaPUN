@@ -64,13 +64,14 @@ public class PlayerController : MonoBehaviourPunCallbacks //, IDamageable
 
 	[Header("Unasigned")]
 	[SerializeField] private Transform playerCamera;
-	[SerializeField] private Transform horizontalDirection;
+	[SerializeField] private Vector3 horizontalDirection;
 
 	private void Awake()
 	{
 		rb = GetComponent<Rigidbody>();
 		PV = GetComponent<PhotonView>();
 		groundCheck = GetComponentInChildren<PlayerGroundCheck>();
+		speedCounter = GameObject.FindWithTag("spd").GetComponent<TextMeshProUGUI>();
 	}
 
 	private void Start()
@@ -87,6 +88,9 @@ public class PlayerController : MonoBehaviourPunCallbacks //, IDamageable
 
 	private void Update()
 	{
+		if (!PV.IsMine)
+			return;
+
 		if (Input.GetKeyDown(KeyCode.Space) && state == MovementState.isGrounded)
 		{
 			Jump();
@@ -118,7 +122,7 @@ public class PlayerController : MonoBehaviourPunCallbacks //, IDamageable
 		else
 			rb.drag = 0f;
 
-		Look();
+		horizontalDirection = calcHorizontalDirection();
 		Move();
 		LimitSpeed();
 
@@ -128,6 +132,8 @@ public class PlayerController : MonoBehaviourPunCallbacks //, IDamageable
 
 	private void LateUpdate()
 	{
+		if (!PV.IsMine)
+			return;
 		Look();
 	}
 
@@ -218,20 +224,27 @@ public class PlayerController : MonoBehaviourPunCallbacks //, IDamageable
 	#endregion State Handling
 
 	#region Basic Movement
+	Vector3 camEulers = Vector3.zero;
 	private void Look()
 	{
-		transform.Rotate(Vector3.up * Input.GetAxisRaw("Mouse X") * mouseSensitivity);
+		camEulers.x -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+		camEulers.y += Input.GetAxis("Mouse X") * mouseSensitivity;
+		camEulers.x = Mathf.Clamp(camEulers.x, -89.0f, 89.0f);
 
-		verticalLookRotation += Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
-		verticalLookRotation = Mathf.Clamp(verticalLookRotation, -90f, 90f);
-
-		cameraHolder.transform.localEulerAngles = Vector3.left * verticalLookRotation;
+		cameraHolder.transform.rotation = Quaternion.Euler(camEulers);
 	}
 
+	private Vector3 calcHorizontalDirection()
+	{
+		Vector3 moveDir = cameraHolder.transform.right * Input.GetAxisRaw("Horizontal") + cameraHolder.transform.forward * Input.GetAxisRaw("Vertical");
+		moveDir.y = 0;
+		moveDir.Normalize();
+
+		return moveDir;
+	}
 	private void Move()
 	{
-		Vector3 moveDir = (horizontalDirection.right * Input.GetAxisRaw("Horizontal") + horizontalDirection.forward * Input.GetAxisRaw("Vertical")).normalized;
-		rb.AddForce(10f * currentMaxSpeed * moveDir, ForceMode.Force);
+		rb.AddForce(10f * currentMaxSpeed * horizontalDirection, ForceMode.Force);
 	}
 
 	public void LimitSpeed()
@@ -260,7 +273,6 @@ public class PlayerController : MonoBehaviourPunCallbacks //, IDamageable
 
 	#region Dash
 	private Vector3 delayedForceToApply;
-
 	public void Dash()
 	{
 		if (dashCdTimer > 0) return;
@@ -273,10 +285,10 @@ public class PlayerController : MonoBehaviourPunCallbacks //, IDamageable
 
 		Vector3 direction = GetDirection(playerCamera);
 
-		Vector3 forceToApply = direction * dashForce + horizontalDirection.up * dashUpwardForce;
+		Vector3 forceToApply = direction * dashForce + Vector3.up * dashUpwardForce;
 
 		delayedForceToApply = forceToApply;
-		Invoke(nameof(DelayedDashForce), 0.025f);
+		Invoke(nameof(DelayedDashForce), 0.025f);// #TODO  czy ta flatka jest tu potrzebna >?
 
 		Invoke(nameof(ResetDash), dashDuration);
 	}

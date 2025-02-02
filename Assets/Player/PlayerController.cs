@@ -1,34 +1,16 @@
 ﻿using Photon.Pun;
-using Photon.Realtime;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-using UnityEngine.UI;
-using Hashtable = ExitGames.Client.Photon.Hashtable;
 
-public class PlayerController : MonoBehaviourPunCallbacks //, IDamageable
+public class PlayerController : MonoBehaviourPunCallbacks
 {
-	[SerializeField] private GameObject cameraHolder;
-
-	[SerializeField] private float mouseSensitivity, smoothTime;
-
-	private float verticalLookRotation;
-
-	private Rigidbody rb;
-
-	private PhotonView PV;
-	private PlayerManager playerManager;
-
-	// Nasze zmienne
-	// DEBUG
-	[SerializeField] private TextMeshProUGUI speedCounter;
 
 	[Header("State")]
 	private PlayerGroundCheck groundCheck;
-	[SerializeField] private MovementState state = MovementState.isAirborn;
+	public MovementState state = MovementState.isAirborn;
 	[SerializeField] private MovementState lastState;
-	private enum MovementState
+	public enum MovementState
 	{
 		isDashing,
 		isSwinging,
@@ -46,6 +28,7 @@ public class PlayerController : MonoBehaviourPunCallbacks //, IDamageable
 	[SerializeField] private float maxSwingSpeed;
 
 	[Header("Movement Stats")]
+	[SerializeField] private float mouseSensitivity;
 	[SerializeField] private float jumpForce;
 	[SerializeField] private float speedLerpMultiplier;
 
@@ -66,6 +49,15 @@ public class PlayerController : MonoBehaviourPunCallbacks //, IDamageable
 	[SerializeField] private Transform playerCamera;
 	[SerializeField] private Vector3 horizontalDirection;
 
+	[Header("References")]
+	private Rigidbody rb;
+	private PhotonView PV;
+	[SerializeField] private GameObject cameraHolder; // #TODO złap referencje na wakae jesli mozliwe
+
+	// DEBUG
+	[SerializeField] private TextMeshProUGUI speedCounter;
+
+
 	private void Awake()
 	{
 		rb = GetComponent<Rigidbody>();
@@ -76,14 +68,19 @@ public class PlayerController : MonoBehaviourPunCallbacks //, IDamageable
 
 	private void Start()
 	{
+		Cursor.lockState = CursorLockMode.Locked;
+		Cursor.visible = false;
 		if (PV.IsMine)
 		{
+
 		}
 		else
 		{
 			Destroy(GetComponentInChildren<Camera>().gameObject);
 			Destroy(rb);
+
 		}
+
 	}
 
 	private void Update()
@@ -305,7 +302,7 @@ public class PlayerController : MonoBehaviourPunCallbacks //, IDamageable
 		maxYSpeed = 0;
 	}
 
-	private Vector3 GetDirection(Transform forwardT)
+	private Vector3 GetDirection(Transform forwardT) // #TODO zastąpić czyms lepszym zminimalizowac lub usunac
 	{
 		float horizontalInput = Input.GetAxisRaw("Horizontal");
 		float verticalInput = Input.GetAxisRaw("Vertical");

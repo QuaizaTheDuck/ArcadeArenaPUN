@@ -6,6 +6,8 @@ public class PlayerGroundCheck : MonoBehaviour
 {
 	PlayerController playerController;
 
+	private bool isGrounded = false;
+
 	void Awake()
 	{
 		playerController = GetComponentInParent<PlayerController>();
@@ -16,7 +18,7 @@ public class PlayerGroundCheck : MonoBehaviour
 		if (other.gameObject == playerController.gameObject)
 			return;
 
-		playerController.SetGroundedState(true);
+		isGrounded = true;
 	}
 
 	void OnTriggerExit(Collider other)
@@ -24,7 +26,7 @@ public class PlayerGroundCheck : MonoBehaviour
 		if (other.gameObject == playerController.gameObject)
 			return;
 
-		playerController.SetGroundedState(false);
+		isGrounded = false;
 	}
 
 	void OnTriggerStay(Collider other)
@@ -32,6 +34,11 @@ public class PlayerGroundCheck : MonoBehaviour
 		if (other.gameObject == playerController.gameObject)
 			return;
 
-		playerController.SetGroundedState(true);
+		isGrounded = true;
+	}
+
+	public bool getGroundCheck()
+	{
+		return isGrounded;
 	}
 }
